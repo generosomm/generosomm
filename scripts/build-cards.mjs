@@ -582,37 +582,36 @@ function githubCard(fonts, g) {
     ? new Date(`${fromDate}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
     : null;
 
-  // One bar per month, its total above it and the month name below.
+  // One square per day, a column per week (Sunday on top), month names
+  // above the week holding the 1st.
   let cells = "";
-  if (g.calendar) {
-    const months = [];
-    for (const d of days) {
-      const key = d.date.slice(0, 7);
-      if (!months.length || months.at(-1).key !== key) months.push({ key, total: 0 });
-      months.at(-1).total += d.contributionCount;
-    }
-    const max = Math.max(1, ...months.map((m) => m.total));
-    const x0 = 32, base = 136, top = 76, gap = 8;
-    const colW = (W - 64 - (months.length - 1) * gap) / months.length;
-    months.forEach((m, i) => {
-      const x = x0 + i * (colW + gap);
-      const h = m.total ? Math.max(5, (m.total / max) * (base - top)) : 2;
-      const fill = m.total ? "url(#bar)" : C.lineStrong;
-      cells += `<rect x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${colW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${fill}"/>`;
-      if (m.total) cells += `<text x="${(x + colW / 2).toFixed(1)}" y="${(base - h - 6).toFixed(1)}" text-anchor="middle" class="mono" font-size="9.5" fill="${C.mid}" style="letter-spacing:0">${m.total}</text>`;
-      const name = new Date(`${m.key}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
-      cells += `<text x="${(x + colW / 2).toFixed(1)}" y="${base + 16}" text-anchor="middle" class="mono" font-size="9" fill="${C.dim}" style="letter-spacing:.08em">${name.toUpperCase()}</text>`;
+  if (g.calendar && days.length) {
+    const shades = [C.line, "rgba(43,212,125,.3)", "rgba(43,212,125,.55)", "rgba(43,212,125,.8)", C.accent];
+    const lead = new Date(`${days[0].date}T00:00:00Z`).getUTCDay();
+    const cols = Math.ceil((lead + days.length) / 7);
+    const x0 = 32, y0 = 90, gap = 2.5;
+    const cell = Math.min(11, (W - 64 - (cols - 1) * gap) / cols);
+    let lastLabel = -Infinity;
+    days.forEach((d, i) => {
+      const col = Math.floor((lead + i) / 7), row = (lead + i) % 7;
+      const x = x0 + col * (cell + gap), y = y0 + row * (cell + gap);
+      const n = d.contributionCount;
+      const level = n === 0 ? 0 : n < 3 ? 1 : n < 6 ? 2 : n < 11 ? 3 : 4;
+      cells += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${cell.toFixed(1)}" height="${cell.toFixed(1)}" rx="2" fill="${shades[level]}"/>`;
+      if ((i === 0 || d.date.endsWith("-01")) && col - lastLabel >= 3 && x + 24 <= W - 32) {
+        lastLabel = col;
+        const name = new Date(`${d.date}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+        cells += `<text x="${x.toFixed(1)}" y="${y0 - 10}" class="mono" font-size="9" fill="${C.dim}" style="letter-spacing:.08em">${name.toUpperCase()}</text>`;
+      }
     });
-    cells = `<defs><linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.accent}"/><stop offset="1" stop-color="${C.accent}" stop-opacity=".35"/></linearGradient></defs>
-<line x1="32" y1="${base + 0.5}" x2="${W - 32}" y2="${base + 0.5}" stroke="${C.lineStrong}"/>${cells}`;
   }
 
   const body = `${frame(W, H)}
 ${label(32, 46, since ? `GitHub · since ${since}` : "GitHub activity", { live: true, color: C.accent })}
 ${cells ? cells : ""}
-${stat(32, 216, total == null ? "n/a" : String(total), "Contributions")}
-${stat(232, 216, String(active), "Active days")}
-${stat(432, 216, `${longest}d`, "Longest streak")}
+${stat(32, 220, total == null ? "n/a" : String(total), "Contributions")}
+${stat(232, 220, String(active), "Active days")}
+${stat(432, 220, `${longest}d`, "Longest streak")}
 <line x1="32" y1="266" x2="${W - 32}" y2="266" stroke="${C.line}"/>
 <text x="32" y="294" class="mono" font-size="10.5" fill="${C.dim}">${esc(`${g.user.public_repos} public repos · ${g.stars} star${g.stars === 1 ? "" : "s"}`)}</text>
 <text x="${W - 32}" y="294" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
