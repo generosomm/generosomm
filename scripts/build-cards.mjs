@@ -137,8 +137,8 @@ async function buildHero() {
 
   <line x1="0" y1="${H - 52}" x2="${W}" y2="${H - 52}" stroke="${C.line}"/>
   <g class="rise" style="animation-delay:.45s">
-    ${label(72, H - 21, "4th year BSIT · NU Laguna x APC")}
-    ${label(520, H - 21, "Open to OJT · Nov 2026", { color: C.accent })}
+    ${label(72, H - 21, "Full-stack development")}
+    ${label(520, H - 21, "Video production")}
     ${label(930, H - 21, "generosomm.dev ↗")}
   </g>
 </g>
@@ -287,7 +287,7 @@ ${stat(432, 192, `${longest}d`, "Longest streak")}
 }
 
 function languagesCard(fonts, g) {
-  const W = 1260, H = 150;
+  const W = 620, H = 290;
   const entries = Object.entries(g.bytes).sort((a, b) => b[1] - a[1]);
   const totalBytes = entries.reduce((s, [, n]) => s + n, 0) || 1;
   // Languages under 1% (build scripts, misdetections) fold into "Other".
@@ -296,31 +296,33 @@ function languagesCard(fonts, g) {
   if (rest / totalBytes >= 0.005) top.push(["Other", rest]);
 
   const shades = [C.accent, "#6fe3a6", "#e8e6e0", "#8c8c88", "#4d4d4a", "#2f2f2d", "#1d1d1c"];
-  const barX = 32, barW = W - 64, barY = 66;
+  const barX = 32, barW = W - 64, barY = 72;
   let x = barX, bar = "", legend = "";
   top.forEach(([lang, n], i) => {
     const w = (n / totalBytes) * barW;
     bar += `<rect x="${x.toFixed(1)}" y="${barY}" width="${Math.max(w - 2, 1).toFixed(1)}" height="10" rx="2" fill="${shades[i]}"/>`;
     x += w;
-    const lx = barX + i * (barW / top.length);
-    legend += `<rect x="${lx.toFixed(1)}" y="${barY + 32}" width="8" height="8" rx="2" fill="${shades[i]}"/>
-<text x="${(lx + 16).toFixed(1)}" y="${barY + 40}" class="mono" font-size="11" fill="${C.text}" style="letter-spacing:.08em">${esc(lang)} <tspan fill="${C.dim}">${((n / totalBytes) * 100).toFixed(1)}%</tspan></text>`;
+    const lx = barX + (i % 2) * (barW / 2), ly = barY + 64 + Math.floor(i / 2) * 36;
+    legend += `<rect x="${lx.toFixed(1)}" y="${ly - 8}" width="8" height="8" rx="2" fill="${shades[i]}"/>
+<text x="${(lx + 16).toFixed(1)}" y="${ly}" class="mono" font-size="11" fill="${C.text}" style="letter-spacing:.08em">${esc(lang)} <tspan fill="${C.dim}">${((n / totalBytes) * 100).toFixed(1)}%</tspan></text>`;
   });
 
   const body = `${frame(W, H)}
-${label(32, 44, "Languages across my repos", { live: true, color: C.accent })}
-${bar}${legend}`;
+${label(32, 46, "Languages · public repos", { live: true, color: C.accent })}
+${bar}${legend}
+<line x1="32" y1="236" x2="${W - 32}" y2="236" stroke="${C.line}"/>
+<text x="32" y="264" class="mono" font-size="10.5" fill="${C.dim}">By code size</text>
+<text x="${W - 32}" y="264" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
   return svg(W, H, fonts, body, "Top languages across public repositories");
 }
 
 async function buildLive(dir) {
   const fonts = await fontFaces();
   await mkdir(dir, { recursive: true });
-  const [creator, github] = await Promise.all([creatorStats(), githubStats()]);
-  await writeFile(join(dir, "card-creator.svg"), creatorCard(fonts, creator));
+  const github = await githubStats();
   await writeFile(join(dir, "card-github.svg"), githubCard(fonts, github));
   await writeFile(join(dir, "card-languages.svg"), languagesCard(fonts, github));
-  console.log(`wrote live cards to ${dir} (creator: ${creator.source})`);
+  console.log(`wrote live cards to ${dir}`);
 }
 
 const [mode = "live", dir = "dist"] = process.argv.slice(2);
