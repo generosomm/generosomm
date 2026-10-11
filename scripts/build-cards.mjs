@@ -566,7 +566,7 @@ function stat(x, y, value, caption) {
 }
 
 function githubCard(fonts, g) {
-  const W = 620, H = 290;
+  const W = 620, H = 320;
   const allWeeks = g.calendar ? g.calendar.weeks : [];
   // Start at the week holding the 1st of the first active month, so the
   // strip shows the active stretch instead of a year of empty weeks.
@@ -582,37 +582,45 @@ function githubCard(fonts, g) {
     ? new Date(`${fromDate}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
     : null;
 
-  // Heat strip, one column per week, 7 rows; squares capped so a short
-  // stretch does not turn into giant tiles.
+  // One bar per month, its total above it and the month name below.
   let cells = "";
   if (g.calendar) {
-    const max = Math.max(1, ...days.map((d) => d.contributionCount));
-    const gap = 2.5, size = Math.min(11, (W - 64 - (weeks.length - 1) * gap) / weeks.length), x0 = 32, y0 = 66;
-    weeks.forEach((w, wi) => {
-      w.contributionDays.forEach((d, di) => {
-        if (fromDate && d.date < fromDate) return;
-        const level = d.contributionCount === 0 ? 0 : Math.ceil((d.contributionCount / max) * 4);
-        const fill = level === 0 ? "rgba(255,255,255,0.06)" : C.accent;
-        const op = [1, 0.3, 0.55, 0.8, 1][level];
-        cells += `<rect x="${(x0 + wi * (size + gap)).toFixed(1)}" y="${(y0 + di * (size + gap)).toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" rx="1.5" fill="${fill}" fill-opacity="${op}"/>`;
-      });
+    const months = [];
+    for (const d of days) {
+      const key = d.date.slice(0, 7);
+      if (!months.length || months.at(-1).key !== key) months.push({ key, total: 0 });
+      months.at(-1).total += d.contributionCount;
+    }
+    const max = Math.max(1, ...months.map((m) => m.total));
+    const x0 = 32, base = 136, top = 76, gap = 8;
+    const colW = (W - 64 - (months.length - 1) * gap) / months.length;
+    months.forEach((m, i) => {
+      const x = x0 + i * (colW + gap);
+      const h = m.total ? Math.max(5, (m.total / max) * (base - top)) : 2;
+      const fill = m.total ? "url(#bar)" : C.lineStrong;
+      cells += `<rect x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${colW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${fill}"/>`;
+      if (m.total) cells += `<text x="${(x + colW / 2).toFixed(1)}" y="${(base - h - 6).toFixed(1)}" text-anchor="middle" class="mono" font-size="9.5" fill="${C.mid}" style="letter-spacing:0">${m.total}</text>`;
+      const name = new Date(`${m.key}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+      cells += `<text x="${(x + colW / 2).toFixed(1)}" y="${base + 16}" text-anchor="middle" class="mono" font-size="9" fill="${C.dim}" style="letter-spacing:.08em">${name.toUpperCase()}</text>`;
     });
+    cells = `<defs><linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.accent}"/><stop offset="1" stop-color="${C.accent}" stop-opacity=".35"/></linearGradient></defs>
+<line x1="32" y1="${base + 0.5}" x2="${W - 32}" y2="${base + 0.5}" stroke="${C.lineStrong}"/>${cells}`;
   }
 
   const body = `${frame(W, H)}
 ${label(32, 46, since ? `GitHub · since ${since}` : "GitHub activity", { live: true, color: C.accent })}
 ${cells ? cells : ""}
-${stat(32, 192, total == null ? "n/a" : String(total), "Contributions")}
-${stat(232, 192, String(active), "Active days")}
-${stat(432, 192, `${longest}d`, "Longest streak")}
-<line x1="32" y1="236" x2="${W - 32}" y2="236" stroke="${C.line}"/>
-<text x="32" y="264" class="mono" font-size="10.5" fill="${C.dim}">${esc(`${g.user.public_repos} public repos · ${g.stars} star${g.stars === 1 ? "" : "s"}`)}</text>
-<text x="${W - 32}" y="264" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
+${stat(32, 216, total == null ? "n/a" : String(total), "Contributions")}
+${stat(232, 216, String(active), "Active days")}
+${stat(432, 216, `${longest}d`, "Longest streak")}
+<line x1="32" y1="266" x2="${W - 32}" y2="266" stroke="${C.line}"/>
+<text x="32" y="294" class="mono" font-size="10.5" fill="${C.dim}">${esc(`${g.user.public_repos} public repos · ${g.stars} star${g.stars === 1 ? "" : "s"}`)}</text>
+<text x="${W - 32}" y="294" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
   return svg(W, H, fonts, body, `GitHub: ${total ?? "n/a"} contributions${since ? ` since ${since}` : ""}`);
 }
 
 function languagesCard(fonts, g) {
-  const W = 620, H = 290;
+  const W = 620, H = 320;
   const entries = Object.entries(g.bytes).sort((a, b) => b[1] - a[1]);
   const totalBytes = entries.reduce((s, [, n]) => s + n, 0) || 1;
   // Languages under 1% (build scripts, misdetections) fold into "Other".
@@ -635,9 +643,9 @@ function languagesCard(fonts, g) {
   const body = `${frame(W, H)}
 ${label(32, 46, "Languages · public repos", { live: true, color: C.accent })}
 ${bar}${legend}
-<line x1="32" y1="236" x2="${W - 32}" y2="236" stroke="${C.line}"/>
-<text x="32" y="264" class="mono" font-size="10.5" fill="${C.dim}">By code size</text>
-<text x="${W - 32}" y="264" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
+<line x1="32" y1="266" x2="${W - 32}" y2="266" stroke="${C.line}"/>
+<text x="32" y="294" class="mono" font-size="10.5" fill="${C.dim}">By code size</text>
+<text x="${W - 32}" y="294" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
   return svg(W, H, fonts, body, "Top languages across public repositories");
 }
 
