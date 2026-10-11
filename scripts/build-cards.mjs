@@ -1,12 +1,14 @@
 // Builds the profile README images in the same look as generosomm.dev.
 //
-//   node scripts/build-cards.mjs hero        -> assets/hero.svg (committed)
+//   node scripts/build-cards.mjs static      -> assets/*.svg panels (committed)
 //   node scripts/build-cards.mjs live [dir]  -> live cards in [dir] (default dist/)
 //
-// The live cards pull fresh numbers on every run:
-//   - creator stats from https://generosomm.dev/api/stats (the portfolio's live API)
-//   - GitHub activity and languages from the GitHub API (GITHUB_TOKEN)
-// If a source is down, the card falls back to the last documented numbers.
+// The static panels (hero, about, services, work, editing, experience, stack,
+// contact) reuse the portfolio's copy, fonts and colours. Rebuild them after
+// editing the copy below. `hero` is kept as an alias for `static`.
+//
+// The live cards pull GitHub activity and languages from the GitHub API
+// (GITHUB_TOKEN) on every run of .github/workflows/profile-cards.yml.
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
@@ -15,7 +17,6 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const USER = process.env.GH_USER || "generosomm";
 const TOKEN = process.env.GITHUB_TOKEN || "";
-const PORTFOLIO_API = "https://generosomm.dev/api/stats";
 
 // Tokens from generosomm.dev css/tokens.css
 const C = {
@@ -30,20 +31,20 @@ const C = {
   wash: "rgba(43,212,125,0.14)"
 };
 
-// Documented numbers from the master CV, used when the live API is unreachable.
-const FALLBACK_CREATOR = { views: 274_000_000, followers: 260_000, posts: 2_600 };
+const FONTS = {
+  display: ["Clash Display", "clash-display-600.woff2", 600],
+  mono: ["JetBrains Mono", "jetbrains-mono.woff2", 500],
+  body: ["Satoshi", "satoshi-400.woff2", 400],
+  bodyMedium: ["Satoshi", "satoshi-500.woff2", 500]
+};
 
-async function fontFaces() {
-  const load = async (file) => (await readFile(join(ROOT, "assets/fonts", file))).toString("base64");
-  const faces = [
-    ["Clash Display", "clash-display-600.woff2", 600],
-    ["JetBrains Mono", "jetbrains-mono.woff2", 500],
-    ["Satoshi", "satoshi-400.woff2", 400],
-    ["Satoshi", "satoshi-500.woff2", 500]
-  ];
+// Each panel embeds only the faces it uses, to keep the files small.
+async function fontFaces(keys = Object.keys(FONTS)) {
   const css = [];
-  for (const [family, file, weight] of faces) {
-    css.push(`@font-face{font-family:"${family}";font-weight:${weight};src:url(data:font/woff2;base64,${await load(file)}) format("woff2");}`);
+  for (const key of keys) {
+    const [family, file, weight] = FONTS[key];
+    const data = (await readFile(join(ROOT, "assets/fonts", file))).toString("base64");
+    css.push(`@font-face{font-family:"${family}";font-weight:${weight};src:url(data:font/woff2;base64,${data}) format("woff2");}`);
   }
   return css.join("");
 }
@@ -52,6 +53,7 @@ const BASE_CSS = `
 .display{font-family:"Clash Display",system-ui,sans-serif;font-weight:600;fill:${C.text}}
 .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
 .body{font-family:Satoshi,system-ui,sans-serif;font-weight:400;fill:${C.mid}}
+.strong{font-family:Satoshi,system-ui,sans-serif;font-weight:500;fill:${C.text}}
 .accent{fill:${C.accent}}.mid{fill:${C.mid}}.dim{fill:${C.dim}}.text{fill:${C.text}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .live{animation:pulse 1.6s ease-in-out infinite}
@@ -61,15 +63,6 @@ const BASE_CSS = `
 `;
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-function short(n) {
-  if (n == null || Number.isNaN(n)) return "n/a";
-  if (n >= 1e9) return `${+(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${Math.floor(n / 1e6)}M`;
-  if (n >= 1e4) return `${Math.floor(n / 1e3)}K`;
-  if (n >= 1e3) return `${+(n / 1e3).toFixed(1)}K`;
-  return String(n);
-}
 
 const fmtDate = (d) =>
   new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Manila" });
@@ -93,6 +86,182 @@ function label(x, y, text, { live = false, color = C.mid } = {}) {
     : "";
   return `${dot}<text x="${live ? x + 16 : x}" y="${y}" class="mono" font-size="12" fill="${color}">${esc(text)}</text>`;
 }
+
+/* ---------------- STATIC PANEL HELPERS ---------------- */
+
+const W = 1280, PAD = 64;
+
+// SVG has no text wrapping, so lines are broken by an estimated character budget.
+// {{word}} marks a word drawn in the accent colour, as on the portfolio.
+function wrap(text, max) {
+  const lines = [];
+  let line = "";
+  // Brand names stay on one line.
+  for (const word of text.replace(/ERO \| VISUALS/g, "ERO | VISUALS").split(/ +/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.replace(/\{\{|\}\}/g, "").length > max && line) {
+      lines.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+const rich = (line) =>
+  esc(line).replace(/\{\{(.+?)\}\}/g, (_, word) => `<tspan fill="${C.accent}">${word}</tspan>`);
+
+// A wrapped paragraph; returns the markup and the y of its last baseline.
+function para(x, y, text, { max, size, lh = 1.4, cls = "body", fill }) {
+  const lines = wrap(text, max);
+  const step = Math.round(size * lh);
+  const fillAttr = fill ? ` fill="${fill}"` : "";
+  const tspans = lines.map((l, i) => `<tspan x="${x}"${i ? ` dy="${step}"` : ""}>${rich(l)}</tspan>`).join("");
+  return { svg: `<text x="${x}" y="${y}" class="${cls}" font-size="${size}"${fillAttr}>${tspans}</text>`, last: y + step * (lines.length - 1) };
+}
+
+function grid(h) {
+  let out = "";
+  for (let x = 80; x < W; x += 80) out += `<line x1="${x}" y1="0" x2="${x}" y2="${h}" stroke="rgba(255,255,255,0.035)"/>`;
+  return out;
+}
+
+// Section eyebrow, styled like the portfolio's mono labels: "01 / About".
+function eyebrow(index, name, anchor) {
+  return `<circle cx="${PAD + 4}" cy="67" r="4" fill="${C.accent}"/>
+<text x="${PAD + 18}" y="72" class="mono" font-size="15" fill="${C.mid}"><tspan fill="${C.accent}">${esc(index)}</tspan>  /  ${esc(name)}</text>
+<text x="${W - PAD}" y="72" text-anchor="end" class="mono" font-size="13" fill="${C.dim}">generosomm.dev${esc(anchor ? `/#${anchor}` : "")}</text>`;
+}
+
+function panel(h, head, inner) {
+  return `<defs><clipPath id="card"><rect width="${W}" height="${h}" rx="22"/></clipPath></defs>
+<g clip-path="url(#card)">
+  <rect width="${W}" height="${h}" fill="${C.ink}"/>
+  ${grid(h)}
+  ${head}
+  ${inner}
+</g>
+<rect x="0.5" y="0.5" width="${W - 1}" height="${h - 1}" rx="22" fill="none" stroke="${C.lineStrong}"/>`;
+}
+
+const hr = (y, x1 = PAD, x2 = W - PAD) => `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${C.line}"/>`;
+
+// Small north-east arrow drawn as a path, so it never depends on font glyphs.
+const arrow = (x, y, size = 16, color = C.accent) =>
+  `<path d="M${x} ${y + size} L${x + size} ${y} M${x + 4} ${y} H${x + size} V${y + size - 4}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+async function dataUri(rel, type) {
+  return `data:${type};base64,${(await readFile(join(ROOT, rel))).toString("base64")}`;
+}
+
+async function write(name, h, fontKeys, body, title) {
+  const out = join(ROOT, "assets", name);
+  await writeFile(out, svg(W, h, await fontFaces(fontKeys), body, title));
+  console.log(`wrote ${out}`);
+}
+
+/* ---------------- COPY (from generosomm.dev data/*.json, trimmed for GitHub) ---------------- */
+
+const ABOUT = {
+  text: "I turn ideas into things people can {{use}} and {{watch}}. Building websites and editing videos give me two ways to create, while AI keeps me curious about what I can try next.",
+  facts: [
+    ["Based in", "Sto. Tomas City, Batangas, PH"],
+    ["Availability", "Remote, GMT+8"],
+    ["Languages", "English & Filipino"]
+  ]
+};
+
+const SERVICES = [
+  {
+    title: "Music, film & brand promotion",
+    text: "Short-form edits for your release, shared through ERO | VISUALS.",
+    includes: ["An edit shaped around your release", "Publishing across my social channels"]
+  },
+  {
+    title: "Business websites",
+    text: "A responsive home for your business, designed and built around what you do.",
+    includes: ["Help customers understand your offer", "Make enquiries easy from any device"]
+  },
+  {
+    title: "Video editing",
+    text: "Turn your footage into focused short-form content.",
+    includes: ["Hooks, captions and music that fit your story", "Ready for TikTok, Reels and YouTube Shorts"]
+  }
+];
+
+const WORK = [
+  { title: "ASINTA", summary: "Workforce platform for security agencies.", tags: ["React", "TypeScript", "Firebase"] },
+  {
+    title: "Document Tracking & Analytics",
+    summary: "A document system for the City Government of Sto. Tomas. I led project coordination and contributed document routing, digital signatures and an admin dashboard.",
+    tags: ["PHP", "MySQL"]
+  },
+  {
+    title: "MSC NU Laguna Website",
+    summary: "A live community platform. I led the Node.js and Express backend for membership, events and updates.",
+    tags: ["Node.js", "Express", "MySQL"]
+  },
+  {
+    title: "Goodness Gracious",
+    summary: "Hotel EDI integration system. I led the hotel node in a five-team project exchanging ANSI X12 transactions over REST.",
+    tags: ["JavaScript", "Cloud Functions", "Firestore"]
+  },
+  { title: "Zero to Deploy", summary: "A guided planner that turns a client idea into a clear, approved project plan.", tags: ["HTML", "CSS", "JavaScript"], live: true },
+  { title: "Nexus Pass", summary: "An interactive digital pass that works directly in the browser.", tags: ["HTML", "CSS", "JavaScript"], live: true },
+  { title: "This Portfolio", summary: "Framework-free and JSON-driven, designed and built from scratch.", tags: ["HTML", "CSS", "JavaScript"], live: true }
+];
+
+const EDITS = [
+  { title: "Glass Child: Seven Sundays", platform: "TikTok", image: "assets/edits/seven-sundays-thumb.webp" },
+  { title: "The Blueprint of the Trend", platform: "YouTube Short", image: "assets/edits/youtube-blueprint-thumb.webp" },
+  { title: "That's So True: Gracie Abrams edit", platform: "TikTok", image: "assets/edits/thats-so-true-thumb.webp" }
+];
+
+const EXPERIENCE = [
+  {
+    role: "Full-Stack Developer",
+    org: "ASINTA",
+    period: "Aug 2026 to Present",
+    summary: "Workforce platform for security agencies. React, TypeScript, Firebase."
+  },
+  {
+    role: "Creator & Video Editor",
+    org: "ERO | VISUALS",
+    period: "Aug 2022 to Present",
+    summary: "Deliver short-form content for freelance clients, handling briefs, revisions and deadlines. Campaign work includes music releases, film promotion and AI-generated video hooks."
+  },
+  {
+    role: "Web Development Lead",
+    org: "MSC NU Laguna",
+    period: "Jun 2025 to Jul 2026",
+    summary: "Led the production backend for a community platform. Coordinated API integration, troubleshooting and team documentation."
+  },
+  {
+    role: "Project Lead",
+    org: "City Government of Sto. Tomas",
+    period: "2025 to 2026",
+    summary: "Led requirements and stakeholder coordination for a PHP and MySQL document system used across city departments. Contributed routing, digital signatures and an admin dashboard."
+  }
+];
+
+// [name, icon file, single-colour logo drawn in white]
+const STACK = [
+  ["Frontend", [["HTML5", "html5.svg"], ["CSS3", "css3.svg"], ["JavaScript", "javascript.svg"], ["TypeScript", "typescript.svg"], ["React", "react.svg"]]],
+  ["Backend", [["Node.js", "nodejs.svg"], ["Express", "express.svg", true], ["PHP", "php.svg"]]],
+  ["Data & cloud", [["MySQL", "mysql.svg", true], ["Firebase", "firebase.svg"]]],
+  ["Tools", [["Claude", "claude.svg"], ["OpenAI", "openai.svg", true], ["Git", "git.svg"], ["GitHub", "github.svg", true], ["VS Code", "vscode.svg"], ["Vercel", "vercel.svg", true], ["Notion", "notion.svg", true], ["Trello", "trello.svg"]]],
+  ["Creative", [["Premiere Pro", "premierepro.svg"], ["After Effects", "aftereffects.svg"], ["CapCut", "capcut.svg", true], ["Canva", "canva.svg"], ["Picsart", "picsart.svg"], ["Google Flow", "google-flow.webp", true]]],
+  ["Integration & more", [["REST APIs"], ["EDI (ANSI X12)"], ["Systems integration"], ["Database design"], ["SQL"]]]
+];
+
+const CONTACT = {
+  statement: "Need something built, or something cut?",
+  rows: [
+    ["Email", "generosomerwin10@gmail.com"],
+    ["Availability", "Available for freelance projects & remote work"],
+    ["Based in", "Sto. Tomas City, Batangas, PH  ·  GMT+8"]
+  ]
+};
 
 /* ---------------- HERO ---------------- */
 
@@ -139,7 +308,8 @@ async function buildHero() {
   <g class="rise" style="animation-delay:.45s">
     ${label(72, H - 21, "Full-stack development")}
     ${label(520, H - 21, "Video production")}
-    ${label(930, H - 21, "generosomm.dev ↗")}
+    ${label(930, H - 21, "generosomm.dev")}
+    ${arrow(1078, H - 33, 11, C.mid)}
   </g>
 </g>
 <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="22" fill="none" stroke="${C.lineStrong}"/>
@@ -149,30 +319,187 @@ async function buildHero() {
   console.log(`wrote ${out}`);
 }
 
+/* ---------------- STATIC PANELS ---------------- */
+
+async function buildAbout() {
+  const p = para(PAD, 168, ABOUT.text, { max: 46, size: 48, lh: 1.2, cls: "display" });
+  const lineY = p.last + 66;
+  const colW = (W - PAD * 2) / ABOUT.facts.length;
+  const facts = ABOUT.facts
+    .map(([k, v], i) => {
+      const x = PAD + i * colW;
+      return `<text x="${x}" y="${lineY + 44}" class="mono" font-size="13" fill="${C.dim}">${esc(k)}</text>
+<text x="${x}" y="${lineY + 82}" class="body" font-size="26" fill="${C.text}">${esc(v)}</text>`;
+    })
+    .join("");
+  const H = lineY + 120;
+  await write("about.svg", H, ["display", "mono", "body"], panel(H, eyebrow("01", "About", "about"), `${p.svg}${hr(lineY)}${facts}`),
+    "About: I turn ideas into things people can use and watch. Building websites and editing videos give me two ways to create, while AI keeps me curious about what I can try next.");
+}
+
+async function buildServices() {
+  const gap = 24, colW = (W - PAD * 2 - gap * 2) / 3, top = 116, inset = 30;
+  const cards = SERVICES.map((s) => ({ s, title: wrap(s.title, 17), text: wrap(s.text, 28), inc: s.includes.map((t) => wrap(t, 31)) }));
+  const titleLines = Math.max(...cards.map((c) => c.title.length));
+  const textLines = Math.max(...cards.map((c) => c.text.length));
+  const textY = top + 150 + (titleLines - 1) * 40;
+  const incY = textY + (textLines - 1) * 34 + 76;
+  const incStep = (n) => 26 * n + 26;
+  const incH = Math.max(...cards.map((c) => c.inc.reduce((h, l) => h + incStep(l.length), 0)));
+  const cardH = incY - top + incH + 14;
+  const body = cards
+    .map(({ title, text, inc: includes }, i) => {
+      const x = PAD + i * (colW + gap), tx = x + inset;
+      const titleSvg = title.map((l, j) => `<tspan x="${tx}"${j ? ' dy="40"' : ""}>${esc(l)}</tspan>`).join("");
+      const textSvg = text.map((l, j) => `<tspan x="${tx}"${j ? ' dy="34"' : ""}>${esc(l)}</tspan>`).join("");
+      let y = incY, inc = "";
+      for (const lines of includes) {
+        const tspans = lines.map((l, j) => `<tspan x="${tx + 20}"${j ? ' dy="26"' : ""}>${esc(l)}</tspan>`).join("");
+        inc += `<line x1="${tx}" y1="${y - 28}" x2="${x + colW - inset}" y2="${y - 28}" stroke="${C.line}"/>
+<rect x="${tx}" y="${y - 10}" width="7" height="7" rx="1.5" fill="${C.accent}"/>
+<text x="${tx}" y="${y}" class="body" font-size="20" fill="${C.text}">${tspans}</text>`;
+        y += incStep(lines.length);
+      }
+      return `<rect x="${x}" y="${top}" width="${colW}" height="${cardH}" rx="16" fill="${C.raised}" stroke="${C.line}"/>
+<text x="${tx}" y="${top + 50}" class="mono" font-size="13" fill="${C.accent}">0${i + 1}</text>
+<text x="${tx}" y="${top + 100}" class="display" font-size="34">${titleSvg}</text>
+<text x="${tx}" y="${textY}" class="body" font-size="23">${textSvg}</text>
+${inc}`;
+    })
+    .join("");
+  const H = top + cardH + 64;
+  await write("services.svg", H, ["display", "mono", "body"], panel(H, eyebrow("02", "Services", "services"), body),
+    `Services: ${SERVICES.map((s) => `${s.title}. ${s.text}`).join(" ")}`);
+}
+
+async function buildWork() {
+  const head = `<text x="${PAD}" y="168" class="display" font-size="72">Selected work.</text>
+<text x="${PAD}" y="222" class="body" font-size="26">Web projects and systems, organized by focus.</text>`;
+  let y = 276, rows = "";
+  WORK.forEach((w, i) => {
+    const summary = para(PAD + 96, y + 94, w.summary, { max: 84, size: 23, lh: 1.45 });
+    rows += `${hr(y)}
+<text x="${PAD}" y="${y + 52}" class="mono" font-size="14" fill="${C.dim}">${String(i + 1).padStart(2, "0")}</text>
+<text x="${PAD + 96}" y="${y + 54}" class="display" font-size="36">${esc(w.title)}</text>
+${w.live ? arrow(W - PAD - 16, y + 36, 16) : ""}
+${summary.svg}
+<text x="${W - PAD - (w.live ? 36 : 0)}" y="${y + 52}" text-anchor="end" class="mono" font-size="13" fill="${C.mid}">${esc(w.tags.join("  ·  "))}</text>`;
+    y = summary.last + 40;
+  });
+  rows += hr(y);
+  const H = y + 56;
+  await write("work.svg", H, ["display", "mono", "body"], panel(H, eyebrow("03", "Work", "work"), `${head}${rows}`),
+    `Selected work: ${WORK.map((w) => `${w.title}. ${w.summary}`).join(" ")}`);
+}
+
+async function buildEditing() {
+  const head = para(PAD, 168, "Short-form edits built to earn attention.", { max: 40, size: 56, lh: 1.1, cls: "display" });
+  const org = `<text x="${PAD}" y="${head.last + 52}" class="mono" font-size="14" fill="${C.mid}"><tspan fill="${C.accent}">ERO | VISUALS</tspan>   Aug 2022 to Present</text>`;
+  const gap = 24, colW = (W - PAD * 2 - gap * 2) / 3, top = head.last + 96, imgH = 420;
+  let thumbs = "";
+  for (const [i, e] of EDITS.entries()) {
+    const x = PAD + i * (colW + gap);
+    const href = await dataUri(e.image, "image/webp");
+    thumbs += `<clipPath id="t${i}"><rect x="${x}" y="${top}" width="${colW}" height="${imgH}" rx="14"/></clipPath>
+<rect x="${x}" y="${top}" width="${colW}" height="${imgH}" rx="14" fill="${C.raised}"/>
+<image href="${href}" x="${x}" y="${top}" width="${colW}" height="${imgH}" preserveAspectRatio="xMidYMid slice" clip-path="url(#t${i})"/>
+<rect x="${x + 0.5}" y="${top + 0.5}" width="${colW - 1}" height="${imgH - 1}" rx="14" fill="none" stroke="${C.line}"/>
+<text x="${x}" y="${top + imgH + 40}" class="mono" font-size="13" fill="${C.accent}">${esc(e.platform)}</text>
+<text x="${x}" y="${top + imgH + 76}" class="strong" font-size="23">${esc(e.title)}</text>`;
+  }
+  const H = top + imgH + 120;
+  await write("editing.svg", H, ["display", "mono", "bodyMedium"], panel(H, eyebrow("04", "Video editing", "edits"), `${head.svg}${org}${thumbs}`),
+    `Video editing with ERO | VISUALS: ${EDITS.map((e) => e.title).join(", ")}`);
+}
+
+async function buildExperience() {
+  const head = `<text x="${PAD}" y="168" class="display" font-size="72">Experience</text>`;
+  const col = PAD + 300;
+  let y = 224, rows = "";
+  for (const e of EXPERIENCE) {
+    const summary = para(col, y + 134, e.summary, { max: 78, size: 23, lh: 1.45 });
+    rows += `${hr(y)}
+<text x="${PAD}" y="${y + 56}" class="mono" font-size="14" fill="${C.mid}">${esc(e.period)}</text>
+<text x="${col}" y="${y + 58}" class="display" font-size="36">${esc(e.role)}</text>
+<text x="${col}" y="${y + 94}" class="mono" font-size="14" fill="${C.accent}">${esc(e.org)}</text>
+${summary.svg}`;
+    y = summary.last + 44;
+  }
+  rows += hr(y);
+  const H = y + 56;
+  await write("experience.svg", H, ["display", "mono", "body"], panel(H, eyebrow("05", "Experience", "experience"), `${head}${rows}`),
+    `Experience: ${EXPERIENCE.map((e) => `${e.role}, ${e.org}, ${e.period}`).join("; ")}`);
+}
+
+async function buildStack() {
+  const head = `<text x="${PAD}" y="168" class="display" font-size="72">Stack</text>`;
+  const chipH = 50, icon = 24, x0 = PAD + 260, xMax = W - PAD;
+  let y = 224, body = "";
+  for (const [group, items] of STACK) {
+    body += hr(y);
+    y += 28;
+    body += `<text x="${PAD}" y="${y + 31}" class="mono" font-size="13" fill="${C.mid}">${esc(group)}</text>`;
+    let x = x0;
+    for (const [name, file, mono] of items) {
+      const w = Math.round((file ? icon + 12 : 0) + name.length * 9.6 + 40);
+      if (x + w > xMax) {
+        x = x0;
+        y += chipH + 14;
+      }
+      let img = "";
+      if (file) {
+        const href = await dataUri(`assets/icons/${file}`, file.endsWith(".svg") ? "image/svg+xml" : "image/webp");
+        img = `<image href="${href}" x="${x + 18}" y="${y + (chipH - icon) / 2}" width="${icon}" height="${icon}"${mono ? ' filter="url(#white)"' : ""}/>`;
+      }
+      body += `<rect x="${x}" y="${y}" width="${w}" height="${chipH}" rx="${chipH / 2}" fill="${C.raised}" stroke="${C.lineStrong}"/>
+${img}<text x="${x + (file ? 18 + icon + 12 : 20)}" y="${y + 32}" class="strong" font-size="20">${esc(name)}</text>`;
+      x += w + 12;
+    }
+    y += chipH + 28;
+  }
+  body += hr(y);
+  const defs = `<defs><filter id="white" color-interpolation-filters="sRGB"><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter></defs>`;
+  const H = y + 56;
+  await write("stack.svg", H, ["display", "mono", "bodyMedium"], panel(H, eyebrow("06", "Stack", "stack"), `${defs}${head}${body}`),
+    `Stack. ${STACK.map(([g, items]) => `${g}: ${items.map((i) => i[0]).join(", ")}`).join(". ")}`);
+}
+
+async function buildContact() {
+  const head = para(PAD, 176, CONTACT.statement, { max: 24, size: 84, lh: 1.02, cls: "display" });
+  let y = head.last + 70, rows = "";
+  for (const [k, v] of CONTACT.rows) {
+    rows += `${hr(y)}
+<text x="${PAD}" y="${y + 50}" class="mono" font-size="13" fill="${C.dim}">${esc(k)}</text>
+<text x="${PAD + 260}" y="${y + 52}" class="body" font-size="26" fill="${C.text}">${esc(v)}</text>`;
+    y += 82;
+  }
+  rows += hr(y);
+  const btnY = y + 40, btnW = 220;
+  const btn = `<rect x="${PAD}" y="${btnY}" width="${btnW}" height="60" rx="30" fill="${C.accent}"/>
+<text x="${PAD + 32}" y="${btnY + 37}" class="mono" font-size="15" fill="${C.ink}">Email me</text>
+${arrow(PAD + btnW - 52, btnY + 22, 16, C.ink)}`;
+  const H = btnY + 60 + 64;
+  await write("contact.svg", H, ["display", "mono", "body"], panel(H, eyebrow("07", "Contact", "contact"), `${head.svg}${rows}${btn}`),
+    `${CONTACT.statement} Email generosomerwin10@gmail.com. Available for freelance projects and remote work.`);
+}
+
+async function buildStatic() {
+  await buildHero();
+  await buildAbout();
+  await buildServices();
+  await buildWork();
+  await buildEditing();
+  await buildExperience();
+  await buildStack();
+  await buildContact();
+}
+
 /* ---------------- LIVE DATA ---------------- */
 
 async function getJson(url, headers = {}) {
   const res = await fetch(url, { headers: { "User-Agent": `${USER}-profile-cards`, ...headers }, signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`${url} -> ${res.status}`);
   return res.json();
-}
-
-async function creatorStats() {
-  try {
-    const data = await getJson(PORTFOLIO_API);
-    const t = data.totals || {};
-    if (!t.views) throw new Error("no totals in response");
-    return {
-      views: Math.max(t.views, FALLBACK_CREATOR.views),
-      followers: Math.max(t.followers || 0, FALLBACK_CREATOR.followers),
-      posts: Math.max(t.posts || 0, FALLBACK_CREATOR.posts),
-      source: "live",
-      updatedAt: data.updatedAt || new Date().toISOString()
-    };
-  } catch (error) {
-    console.warn(`creator stats fallback: ${error.message}`);
-    return { ...FALLBACK_CREATOR, source: "documented", updatedAt: new Date().toISOString() };
-  }
 }
 
 const gh = (path) => getJson(`https://api.github.com${path}`, TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {});
@@ -236,20 +563,6 @@ function streaks(days) {
 function stat(x, y, value, caption) {
   return `<text x="${x}" y="${y}" class="display" font-size="46">${esc(value)}</text>
 <text x="${x + 2}" y="${y + 30}" class="mono" font-size="11" fill="${C.mid}">${esc(caption)}</text>`;
-}
-
-function creatorCard(fonts, s) {
-  const W = 620, H = 290;
-  const sourceText = s.source === "live" ? `Live from generosomm.dev · ${fmtDate(s.updatedAt)}` : `Documented · ${fmtDate(s.updatedAt)}`;
-  const body = `${frame(W, H)}
-${label(32, 46, "ERO | VISUALS · creator stats", { live: s.source === "live", color: C.accent })}
-${stat(32, 150, `${short(s.views)}+`, "Total views")}
-${stat(232, 150, `${short(s.followers)}+`, "Followers")}
-${stat(432, 150, `${short(s.posts)}+`, "Posts")}
-<line x1="32" y1="236" x2="${W - 32}" y2="236" stroke="${C.line}"/>
-<text x="32" y="264" class="mono" font-size="10.5" fill="${C.dim}">${esc(sourceText)}</text>
-<text x="${W - 32}" y="264" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">TikTok + YouTube</text>`;
-  return svg(W, H, fonts, body, `Creator stats: ${short(s.views)}+ views, ${short(s.followers)}+ followers`);
 }
 
 function githubCard(fonts, g) {
@@ -326,5 +639,5 @@ async function buildLive(dir) {
 }
 
 const [mode = "live", dir = "dist"] = process.argv.slice(2);
-if (mode === "hero") await buildHero();
+if (mode === "static" || mode === "hero") await buildStatic();
 else await buildLive(resolve(dir));

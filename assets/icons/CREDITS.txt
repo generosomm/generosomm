@@ -1,0 +1,22 @@
+Stack logos: where each one comes from.
+
+Devicon (MIT licence, see LICENSE.txt in this folder)
+  https://github.com/devicons/devicon
+  javascript, php, html5, css3, nodejs, express, mysql, firebase, git,
+  github, vscode, vercel, notion, trello, premierepro, aftereffects, canva,
+  typescript, react
+
+LobeHub Icons (MIT licence), @lobehub/icons-static-svg 1.95.1
+  https://github.com/lobehub/lobe-icons
+  claude.svg (claude-color), openai.svg (openai), capcut.svg (capcut)
+
+Simple Icons (CC0)
+  https://simpleicons.org
+  picsart.svg, coloured with Picsart's brand colour #C209C1
+
+Google Flow
+  google-flow.webp: Google Flow's own white favicon
+  (https://labs.google/fx/tools/flow), resized to 128px.
+
+All product names and logos are trademarks of their owners and are
+shown only to say which tools are used.

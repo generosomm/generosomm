@@ -4,6 +4,7 @@
 .display{font-family:"Clash Display",system-ui,sans-serif;font-weight:600;fill:#f2f2f0}
 .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
 .body{font-family:Satoshi,system-ui,sans-serif;font-weight:400;fill:#8c8c88}
+.strong{font-family:Satoshi,system-ui,sans-serif;font-weight:500;fill:#f2f2f0}
 .accent{fill:#2bd47d}.mid{fill:#8c8c88}.dim{fill:#6c6c66}.text{fill:#f2f2f0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .live{animation:pulse 1.6s ease-in-out infinite}
@@ -45,7 +46,8 @@
   <g class="rise" style="animation-delay:.45s">
     <text x="72" y="539" class="mono" font-size="12" fill="#8c8c88">Full-stack development</text>
     <text x="520" y="539" class="mono" font-size="12" fill="#8c8c88">Video production</text>
-    <text x="930" y="539" class="mono" font-size="12" fill="#8c8c88">generosomm.dev ↗</text>
+    <text x="930" y="539" class="mono" font-size="12" fill="#8c8c88">generosomm.dev</text>
+    <path d="M1078 538 L1089 527 M1082 527 H1089 V534" fill="none" stroke="#8c8c88" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </g>
 <rect x="0.5" y="0.5" width="1279" height="559" rx="22" fill="none" stroke="rgba(255,255,255,0.18)"/>

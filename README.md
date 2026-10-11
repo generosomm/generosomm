@@ -1,5 +1,5 @@
 <a href="https://generosomm.dev">
-  <img src="./assets/hero.svg" alt="Merwin Generoso, systems developer and creative technologist" width="100%" />
+  <img src="./assets/hero.svg" alt="Merwin Generoso, systems developer and creative technologist. Creating things you can click, use and watch." width="100%" />
 </a>
 
 <p align="center">
@@ -8,54 +8,56 @@
   <a href="mailto:generosomerwin10@gmail.com"><img src="https://img.shields.io/badge/Email-0a0a0a?style=for-the-badge&logo=gmail&logoColor=2bd47d" alt="Email" /></a>
 </p>
 
-### `01` About
+<a href="https://generosomm.dev/#about">
+  <img src="./assets/about.svg" alt="About. I turn ideas into things people can use and watch. Building websites and editing videos give me two ways to create, while AI keeps me curious about what I can try next. Based in Sto. Tomas City, Batangas, PH. Remote, GMT+8. English and Filipino." width="100%" />
+</a>
 
-Developer based in Batangas, Philippines. I work on backends, web apps and internal systems, mostly with Node.js, PHP, React and Firebase. I also produce short-form video under ERO | VISUALS.
+<a href="https://generosomm.dev/#services">
+  <img src="./assets/services.svg" alt="Services. Music, film and brand promotion: short-form edits for your release. Business websites: a responsive home for your business, designed and built around what you do. Video editing: turn your footage into focused short-form content." width="100%" />
+</a>
 
-### `02` Recent work
-
-- **ASINTA** · Workforce platform for security agencies: scheduling, secure check-in and compliance forms. React, TypeScript, Firebase.
-- **Document Tracking System** · Document routing, digital signatures and an admin dashboard for a local government unit. PHP, MySQL.
-- **MSC NU Laguna website** · Backend for a student community site at [mscnulaguna.org](https://mscnulaguna.org). Node.js, Express, MySQL.
-
-### `03` Selected projects
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://github.com/generosomm/ZeroToDeploy"><b>Zero to Deploy ↗</b></a><br />
-      <sub>Planning standard and form that generates master prompts for building systems with AI.</sub><br /><br />
-      <code>HTML</code> <code>CSS</code> <code>JavaScript</code>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://github.com/generosomm/safeframe"><b>SafeFrame ↗</b></a><br />
-      <sub>Shows what the TikTok, Reels and Shorts UI covers on a vertical video, in the browser.</sub><br /><br />
-      <code>JavaScript</code> <code>Vercel</code>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://github.com/generosomm/Document-Tracker"><b>Document Tracker ↗</b></a><br />
-      <sub>Submit, route, track and archive documents with role-based access and PDF generation.</sub><br /><br />
-      <code>PHP</code> <code>MySQL</code>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://github.com/generosomm/arenasync-api"><b>ArenaSync API ↗</b></a><br />
-      <sub>REST backend for esports tournaments, teams, matches and stats.</sub><br /><br />
-      <code>Node.js</code> <code>Express</code> <code>MySQL</code>
-    </td>
-  </tr>
-</table>
-
-### `04` Stack
+<a href="https://generosomm.dev/#work">
+  <img src="./assets/work.svg" alt="Selected work. ASINTA, a workforce platform for security agencies. Document Tracking and Analytics for the City Government of Sto. Tomas. MSC NU Laguna Website. Goodness Gracious, a hotel EDI integration system. Zero to Deploy. Nexus Pass. This portfolio." width="100%" />
+</a>
 
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=js,ts,php,react,vite,tailwind,nodejs,express,mysql,firebase,git,vercel&perline=12&theme=dark" alt="Tech stack" />
+  <a href="https://generosomm.github.io/ZeroToDeploy/"><img src="https://img.shields.io/badge/Zero%20to%20Deploy-0a0a0a?style=for-the-badge&logo=googlechrome&logoColor=2bd47d" alt="Zero to Deploy, live site" /></a>
+  <a href="https://generosomm.github.io/nexus-pass/"><img src="https://img.shields.io/badge/Nexus%20Pass-0a0a0a?style=for-the-badge&logo=googlechrome&logoColor=2bd47d" alt="Nexus Pass, live site" /></a>
+  <a href="https://generosomm.dev/"><img src="https://img.shields.io/badge/generosomm.dev-0a0a0a?style=for-the-badge&logo=googlechrome&logoColor=2bd47d" alt="This portfolio, live site" /></a>
+  <br />
+  <a href="https://github.com/generosomm/Document-Tracker"><img src="https://img.shields.io/badge/Document%20Tracker-0a0a0a?style=for-the-badge&logo=github&logoColor=2bd47d" alt="Document Tracker repository" /></a>
+  <a href="https://github.com/generosomm/safeframe"><img src="https://img.shields.io/badge/SafeFrame-0a0a0a?style=for-the-badge&logo=github&logoColor=2bd47d" alt="SafeFrame repository" /></a>
+  <a href="https://github.com/generosomm/arenasync-api"><img src="https://img.shields.io/badge/ArenaSync%20API-0a0a0a?style=for-the-badge&logo=github&logoColor=2bd47d" alt="ArenaSync API repository" /></a>
 </p>
 
-### `05` Activity
+<a href="https://generosomm.dev/#edits">
+  <img src="./assets/editing.svg" alt="Video editing with ERO | VISUALS: short-form edits built to earn attention. Glass Child: Seven Sundays, The Blueprint of the Trend, and That's So True." width="100%" />
+</a>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/generosomm/generosomm/output/card-github.svg" alt="GitHub contributions" width="49%" />
+  <a href="https://www.tiktok.com/@eroedtx"><img src="https://img.shields.io/badge/TikTok-0a0a0a?style=for-the-badge&logo=tiktok&logoColor=2bd47d" alt="TikTok" /></a>
+  <a href="https://www.youtube.com/@eroedtx"><img src="https://img.shields.io/badge/YouTube-0a0a0a?style=for-the-badge&logo=youtube&logoColor=2bd47d" alt="YouTube" /></a>
+  <a href="https://www.instagram.com/eroedtx/"><img src="https://img.shields.io/badge/Instagram-0a0a0a?style=for-the-badge&logo=instagram&logoColor=2bd47d" alt="Instagram" /></a>
+  <a href="https://www.facebook.com/eroedtx"><img src="https://img.shields.io/badge/Facebook-0a0a0a?style=for-the-badge&logo=facebook&logoColor=2bd47d" alt="Facebook" /></a>
+</p>
+
+<a href="https://generosomm.dev/#experience">
+  <img src="./assets/experience.svg" alt="Experience. Full-Stack Developer, ASINTA, Aug 2026 to Present. Creator and Video Editor, ERO | VISUALS, Aug 2022 to Present. Web Development Lead, MSC NU Laguna, Jun 2025 to Jul 2026. Project Lead, City Government of Sto. Tomas, 2025 to 2026." width="100%" />
+</a>
+
+<a href="https://generosomm.dev/#stack">
+  <img src="./assets/stack.svg" alt="Stack. Frontend: HTML5, CSS3, JavaScript, TypeScript, React. Backend: Node.js, Express, PHP. Data and cloud: MySQL, Firebase. Tools: Claude, OpenAI, Git, GitHub, VS Code, Vercel, Notion, Trello. Creative: Premiere Pro, After Effects, CapCut, Canva, Picsart, Google Flow. Also REST APIs, EDI (ANSI X12), systems integration, database design and SQL." width="100%" />
+</a>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/generosomm/generosomm/output/card-github.svg" alt="GitHub contributions over the last 12 months" width="49%" />
   <img src="https://raw.githubusercontent.com/generosomm/generosomm/output/card-languages.svg" alt="Languages across my repositories" width="49%" />
+</p>
+
+<a href="mailto:generosomerwin10@gmail.com">
+  <img src="./assets/contact.svg" alt="Need something built, or something cut? Email generosomerwin10@gmail.com. Available for freelance projects and remote work. Based in Sto. Tomas City, Batangas, PH, GMT+8." width="100%" />
+</a>
+
+<p align="center">
+  <sub><a href="https://generosomm.dev">generosomm.dev</a> · <a href="https://www.linkedin.com/in/generosomm/">LinkedIn</a> · <a href="mailto:generosomerwin10@gmail.com">Email</a></sub>
 </p>
