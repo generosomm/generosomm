@@ -1,3 +1,5 @@
+<p align="center"><a href="https://generosomm.dev"><img src="./assets/nav-brand.svg" alt="Merwin Generoso" width="45.816%" /></a><a href="#about"><img src="./assets/nav-about.svg" alt="About" width="7.586%" /></a><a href="#services"><img src="./assets/nav-services.svg" alt="Services" width="10.078%" /></a><a href="#work"><img src="./assets/nav-work.svg" alt="Work" width="6.756%" /></a><a href="#experience"><img src="./assets/nav-experience.svg" alt="Experience" width="11.738%" /></a><a href="#stack"><img src="./assets/nav-stack.svg" alt="Stack" width="7.586%" /></a><a href="#contact"><img src="./assets/nav-contact.svg" alt="Contact" width="10.340%" /></a></p>
+
 <a href="https://generosomm.dev">
   <img src="./assets/hero.svg" alt="Merwin Generoso, systems developer and creative technologist. Creating things you can click, use and watch." width="100%" />
 </a>
@@ -8,13 +10,19 @@
   <a href="mailto:generosomerwin10@gmail.com"><img src="https://img.shields.io/badge/Email-0a0a0a?style=for-the-badge&logo=gmail&logoColor=2bd47d" alt="Email" /></a>
 </p>
 
+<a id="about"></a>
+
 <a href="https://generosomm.dev/#about">
   <img src="./assets/about.svg" alt="About. I turn ideas into things people can use and watch. Building websites and editing videos give me two ways to create, while AI keeps me curious about what I can try next. Based in Sto. Tomas City, Batangas, PH. Remote, GMT+8. English and Filipino." width="100%" />
 </a>
 
+<a id="services"></a>
+
 <a href="https://generosomm.dev/#services">
   <img src="./assets/services.svg" alt="Services. Music, film and brand promotion: short-form edits for your release. Business websites: a responsive home for your business, designed and built around what you do. Video editing: turn your footage into focused short-form content." width="100%" />
 </a>
+
+<a id="work"></a>
 
 <a href="https://generosomm.dev/#work">
   <img src="./assets/work.svg" alt="Selected work. ASINTA, a workforce platform for security agencies. Document Tracking and Analytics for the City Government of Sto. Tomas. MSC NU Laguna Website. Goodness Gracious, a hotel EDI integration system. Zero to Deploy. Nexus Pass. This portfolio." width="100%" />
@@ -41,9 +49,13 @@
   <a href="https://www.facebook.com/eroedtx"><img src="https://img.shields.io/badge/Facebook-0a0a0a?style=for-the-badge&logo=facebook&logoColor=2bd47d" alt="Facebook" /></a>
 </p>
 
+<a id="experience"></a>
+
 <a href="https://generosomm.dev/#experience">
   <img src="./assets/experience.svg" alt="Experience. Full-Stack Developer, ASINTA, Aug 2026 to Present. Creator and Video Editor, ERO | VISUALS, Aug 2022 to Present. Web Development Lead, MSC NU Laguna, Jun 2025 to Jul 2026. Project Lead, City Government of Sto. Tomas, 2025 to 2026." width="100%" />
 </a>
+
+<a id="stack"></a>
 
 <a href="https://generosomm.dev/#stack">
   <img src="./assets/stack.svg" alt="Stack. Frontend: HTML5, CSS3, JavaScript, TypeScript, React. Backend: Node.js, Express, PHP. Data and cloud: MySQL, Firebase. Tools: Claude, OpenAI, Git, GitHub, VS Code, Vercel, Notion, Trello. Creative: Premiere Pro, After Effects, CapCut, Canva, Picsart, Google Flow. Also REST APIs, EDI (ANSI X12), systems integration, database design and SQL." width="100%" />
@@ -53,6 +65,8 @@
   <img src="https://raw.githubusercontent.com/generosomm/generosomm/output/card-github.svg" alt="GitHub contributions over the last 12 months" width="49%" />
   <img src="https://raw.githubusercontent.com/generosomm/generosomm/output/card-languages.svg" alt="Languages across my repositories" width="49%" />
 </p>
+
+<a id="contact"></a>
 
 <a href="mailto:generosomerwin10@gmail.com">
   <img src="./assets/contact.svg" alt="Need something built, or something cut? Email generosomerwin10@gmail.com. Available for freelance projects and remote work. Based in Sto. Tomas City, Batangas, PH, GMT+8." width="100%" />

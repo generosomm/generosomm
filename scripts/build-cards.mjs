@@ -483,7 +483,55 @@ ${arrow(PAD + btnW - 52, btnY + 22, 16, C.ink)}`;
     `${CONTACT.statement} Email generosomerwin10@gmail.com. Available for freelance projects and remote work.`);
 }
 
+// The portfolio's top bar, cut into one slice per link: GitHub keeps
+// every image a separate link, so the bar is drawn once and each slice
+// shows its part of it through its viewBox. README.md places the slices
+// side by side at widths that add up to the whole bar.
+const NAV = [
+  ["About", "about"],
+  ["Services", "services"],
+  ["Work", "work"],
+  ["Experience", "experience"],
+  ["Stack", "stack"],
+  ["Contact", "contact"]
+];
+
+async function buildNav() {
+  const fonts = await fontFaces(["display", "mono"]);
+  const H = 76, size = 14, track = 0.16, padX = 22, edge = 36;
+  const textW = (t) => t.length * size * (0.6 + track);
+  const items = NAV.map(([name, id], i) => ({ name, id, w: textW(name) + padX * 2 + (i === NAV.length - 1 ? edge - padX : 0) }));
+  const brandW = W - items.reduce((s, it) => s + it.w, 0);
+
+  let x = brandW;
+  let links = "";
+  for (const it of items) {
+    links += `<text x="${(x + padX).toFixed(1)}" y="${H / 2 + 5}" class="mono" font-size="${size}" fill="${C.mid}">${esc(it.name)}</text>`;
+    it.x = x;
+    x += it.w;
+  }
+  const body = `<defs><clipPath id="bar"><rect x="0" y="0" width="${W}" height="${H}" rx="16"/></clipPath></defs>
+<g clip-path="url(#bar)">
+<rect width="${W}" height="${H}" fill="${C.ink}"/>
+<rect width="${W * 0.62}" height="2" fill="${C.accent}"/>
+</g>
+<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="16" fill="none" stroke="${C.lineStrong}"/>
+<text x="${edge}" y="${H / 2 + 8}" class="display" font-size="22" style="letter-spacing:-.01em">Merwin Generoso</text>
+${links}`;
+
+  const slices = [{ file: "nav-brand.svg", x: 0, w: brandW, title: "Merwin Generoso" },
+    ...items.map((it) => ({ file: `nav-${it.id}.svg`, x: it.x, w: it.w, title: it.name }))];
+  for (const sl of slices) {
+    const out = join(ROOT, "assets", sl.file);
+    const doc = svg(W, H, fonts, body, sl.title)
+      .replace(`width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"`, `width="${sl.w.toFixed(2)}" height="${H}" viewBox="${sl.x.toFixed(2)} 0 ${sl.w.toFixed(2)} ${H}"`);
+    await writeFile(out, doc);
+    console.log(`wrote ${out} (${((sl.w / W) * 100).toFixed(3)}%)`);
+  }
+}
+
 async function buildStatic() {
+  await buildNav();
   await buildHero();
   await buildAbout();
   await buildServices();
