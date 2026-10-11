@@ -567,18 +567,30 @@ function stat(x, y, value, caption) {
 
 function githubCard(fonts, g) {
   const W = 620, H = 290;
-  const days = g.calendar ? g.calendar.weeks.flatMap((w) => w.contributionDays) : [];
-  const { current, longest } = streaks(days);
-  const total = g.calendar ? g.calendar.totalContributions : null;
+  const allWeeks = g.calendar ? g.calendar.weeks : [];
+  // Start at the week holding the 1st of the first active month, so the
+  // strip shows the active stretch instead of a year of empty weeks.
+  const allDays = allWeeks.flatMap((w) => w.contributionDays);
+  const first = allDays.find((d) => d.contributionCount > 0);
+  const fromDate = first ? `${first.date.slice(0, 7)}-01` : null;
+  const weeks = fromDate ? allWeeks.filter((w) => w.contributionDays.at(-1).date >= fromDate) : allWeeks.slice(-52);
+  const days = weeks.flatMap((w) => w.contributionDays).filter((d) => !fromDate || d.date >= fromDate);
+  const { longest } = streaks(days);
+  const active = days.filter((d) => d.contributionCount > 0).length;
+  const total = g.calendar ? days.reduce((s, d) => s + d.contributionCount, 0) : null;
+  const since = fromDate
+    ? new Date(`${fromDate}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
+    : null;
 
-  // 52-week heat strip, one column per week, 7 rows
+  // Heat strip, one column per week, 7 rows; squares capped so a short
+  // stretch does not turn into giant tiles.
   let cells = "";
   if (g.calendar) {
-    const weeks = g.calendar.weeks.slice(-52);
     const max = Math.max(1, ...days.map((d) => d.contributionCount));
-    const gap = 2.5, size = (W - 64 - (weeks.length - 1) * gap) / weeks.length, x0 = 32, y0 = 66;
+    const gap = 2.5, size = Math.min(11, (W - 64 - (weeks.length - 1) * gap) / weeks.length), x0 = 32, y0 = 66;
     weeks.forEach((w, wi) => {
       w.contributionDays.forEach((d, di) => {
+        if (fromDate && d.date < fromDate) return;
         const level = d.contributionCount === 0 ? 0 : Math.ceil((d.contributionCount / max) * 4);
         const fill = level === 0 ? "rgba(255,255,255,0.06)" : C.accent;
         const op = [1, 0.3, 0.55, 0.8, 1][level];
@@ -588,15 +600,15 @@ function githubCard(fonts, g) {
   }
 
   const body = `${frame(W, H)}
-${label(32, 46, "GitHub · last 12 months", { live: true, color: C.accent })}
+${label(32, 46, since ? `GitHub · since ${since}` : "GitHub activity", { live: true, color: C.accent })}
 ${cells ? cells : ""}
 ${stat(32, 192, total == null ? "n/a" : String(total), "Contributions")}
-${stat(232, 192, `${current}d`, "Current streak")}
+${stat(232, 192, String(active), "Active days")}
 ${stat(432, 192, `${longest}d`, "Longest streak")}
 <line x1="32" y1="236" x2="${W - 32}" y2="236" stroke="${C.line}"/>
 <text x="32" y="264" class="mono" font-size="10.5" fill="${C.dim}">${esc(`${g.user.public_repos} public repos · ${g.stars} star${g.stars === 1 ? "" : "s"}`)}</text>
 <text x="${W - 32}" y="264" text-anchor="end" class="mono" font-size="10.5" fill="${C.dim}">${esc(`Synced ${fmtDate(Date.now())}`)}</text>`;
-  return svg(W, H, fonts, body, `GitHub: ${total ?? "n/a"} contributions in the last year`);
+  return svg(W, H, fonts, body, `GitHub: ${total ?? "n/a"} contributions${since ? ` since ${since}` : ""}`);
 }
 
 function languagesCard(fonts, g) {
