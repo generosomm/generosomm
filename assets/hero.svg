@@ -43,8 +43,8 @@
 
   <line x1="0" y1="508" x2="1280" y2="508" stroke="rgba(255,255,255,0.08)"/>
   <g class="rise" style="animation-delay:.45s">
-    <text x="72" y="539" class="mono" font-size="12" fill="#8c8c88">4th year BSIT · NU Laguna x APC</text>
-    <text x="520" y="539" class="mono" font-size="12" fill="#2bd47d">Open to OJT · Nov 2026</text>
+    <text x="72" y="539" class="mono" font-size="12" fill="#8c8c88">Full-stack development</text>
+    <text x="520" y="539" class="mono" font-size="12" fill="#8c8c88">Video production</text>
     <text x="930" y="539" class="mono" font-size="12" fill="#8c8c88">generosomm.dev ↗</text>
   </g>
 </g>
